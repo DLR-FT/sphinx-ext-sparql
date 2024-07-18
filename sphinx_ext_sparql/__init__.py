@@ -1,20 +1,17 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
-from collections.abc import Sequence
-from docutils.nodes import paragraph, inline
+from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective, SphinxRole
-from sphinx.locale import __
 from pyoxigraph import Store, QuerySolution
 from sphinx.domains import Domain
-from docutils.parsers.rst.states import Inliner
 
 if TYPE_CHECKING:
     from docutils.nodes import Node, system_message
 
     from sphinx.application import Sphinx
-    from sphinx.util.typing import ExtensionMetadata, OptionSpec
+    from sphinx.util.typing import ExtensionMetadata
 
 
 class SparqlAskRole(SphinxRole):
@@ -24,13 +21,12 @@ class SparqlAskRole(SphinxRole):
         domain = self.env.get_domain("sparql")
         result = domain.ask(self.text)
 
-        print(result)
         if bool(result):
             text = "✓"
         else:
             text = "x"
 
-        return [inline(text=text)], []
+        return [nodes.inline(text=text)], []
 
 
 class SparqlSelectDirective(SphinxDirective):
@@ -48,15 +44,46 @@ class SparqlSelectDirective(SphinxDirective):
         else:
             bound_vars = []
 
-        domain = self.env.get_domain("sparql")
-        # table = paragraph(text="Hello, World!")
-        # TODO format into table somehow
-        table = []
-        for binding in domain.select("\n".join(self.content)):
-            text = " | ".join([binding[bound] for bound in bound_vars])
-            table += paragraph(text=text)
+        query = "\n".join(self.content)
 
-        return table
+        table = nodes.table()
+        table["classes"] += ["colwidths-auto"]
+        tgroup = nodes.tgroup(cols=len(bound_vars))
+
+        for var in bound_vars:
+            colspec = nodes.colspec()
+            tgroup += colspec
+
+        table += tgroup
+
+        rows = []
+        for binding in self.env.get_domain("sparql").select(query):
+            row_node = nodes.row()
+            for var in bound_vars:
+                entry = nodes.entry()
+                named_node = binding[var]
+                entry += nodes.paragraph(text=named_node.value)
+                row_node += entry
+            rows.append(row_node)
+
+
+        thead = nodes.thead()
+
+        hrow = nodes.row()
+        for var in bound_vars:
+            entry = nodes.entry()
+            entry += nodes.paragraph(text=var)
+            hrow += entry
+
+        thead.extend([hrow])
+        tgroup += thead
+
+        tbody = nodes.tbody()
+        tbody.extend(rows)
+        tgroup += tbody
+        breakpoint()
+
+        return [table]
 
 class SparqlDomain(Domain):
     """Domain for queryinf the store"""
@@ -65,8 +92,11 @@ class SparqlDomain(Domain):
     label = "SPARQL Domain"
     directives = {"select": SparqlSelectDirective}
     roles = {"ask": SparqlAskRole()}
-    store: Store = Store()
     data_version = 0
+
+    @property
+    def store(self) -> Store:
+        return Store(path=self.env.config["sparql_store"])
 
     def ask(self, query: str) -> bool:
         return  self.store.query(query)

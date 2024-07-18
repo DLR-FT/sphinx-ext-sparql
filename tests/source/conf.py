@@ -8,6 +8,7 @@
 
 import os
 import sys
+import pyoxigraph
 
 sys.path.append(os.path.abspath("../.."))
 
@@ -29,3 +30,9 @@ exclude_patterns = []
 
 html_theme = "alabaster"
 html_static_path = ["_static"]
+
+sparql_store = "./db"
+
+store = pyoxigraph.Store(path="../db")
+store.clear()
+store.load("../example.ttl", "text/turtle")
