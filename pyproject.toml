@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sphinx-ext-sparql"
+name = "sphinx-sparql"
 description = "Sphinx Extension for performing SPARQL queries"
 version = "0.0.1"
 dependencies = [
