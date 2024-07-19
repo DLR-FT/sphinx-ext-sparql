@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from pathlib import Path
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from pyoxigraph import Store, QuerySolution
 from sphinx.domains import Domain
@@ -15,18 +16,31 @@ if TYPE_CHECKING:
 
 
 class SparqlAskRole(SphinxRole):
-    """Ask a question about the knowledge graph"""
+    """Ask a SPARQL question about the knowledge graph"""
 
     def run(self) -> tuple[list[Node], list[system_message]]:
+        rel_filename, filename = self.env.relfn2path(self.text)
+        if Path(filename).is_file():
+            self.env.note_dependency(rel_filename)
+            with open(filename, "r") as f:
+                query = f.read()
+        else:
+            # Assume this is a plain SPARQL query
+            query = self.text
+
+        answer = self.ask(query)
+        return [answer], []
+
+    def ask(self, query) -> Node:
         domain = self.env.get_domain("sparql")
-        result = domain.ask(self.text)
+        result = domain.ask(query)
 
         if bool(result):
             text = "✓"
         else:
             text = "x"
 
-        return [nodes.inline(text=text)], []
+        return nodes.inline(text=text)
 
 
 class SparqlSelectDirective(SphinxDirective):
@@ -36,16 +50,28 @@ class SparqlSelectDirective(SphinxDirective):
     required_arguments = 0
     option_spec = {
         "bind": directives.unchanged_required,
+        "file": directives.unchanged,
     }
 
     def run(self) -> list(Node):
-        query = "\n".join(self.content)
+        if "file" in self.options:
+            rel_filename, filename = self.env.relfn2path(self.options["file"])
+            self.env.note_dependency(rel_filename)
+            with open(filename, "r") as f:
+                query = f.read()
+        else:
+            query = "\n".join(self.content)
 
         if "bind" in self.options:
             bound_vars = [x.strip() for x in self.options.get("bind").split(",")]
         else:
             bound_vars = []
 
+        table = self.table(bound_vars, query)
+
+        return [table]
+
+    def table(self, bound_vars, query) -> nodes.table:
         table = nodes.table()
         table["classes"] += ["colwidths-auto"]
         tgroup = nodes.tgroup(cols=len(bound_vars))
@@ -81,7 +107,7 @@ class SparqlSelectDirective(SphinxDirective):
         tbody.extend(rows)
         tgroup += tbody
 
-        return [table]
+        return table
 
 
 class SparqlDomain(Domain):
