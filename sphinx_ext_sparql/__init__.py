@@ -123,7 +123,7 @@ class SparqlDomain(Domain):
 
     @property
     def store(self) -> Store:
-        return Store(path=self.env.sparql_store_path)
+        return Store.read_only(self.env.sparql_store_path)
 
     def ask(self, query: str) -> bool:
         return self.store.query(query)
