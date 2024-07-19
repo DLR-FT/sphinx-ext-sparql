@@ -23,7 +23,7 @@ authors = [
 maintainers = [
     { name = "Tim Schubert", email = "tim.schubert@dlr.de" },
 ]
-readme = "README.md"
+readme = "README.rst"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "License :: OSI Approved :: MIT License",

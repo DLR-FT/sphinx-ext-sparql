@@ -19,7 +19,11 @@ release = "0.1"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx_sparql"]
+master_doc = 'index'
+
+extensions = [
+    "sphinx_sparql",
+]
 
 templates_path = ["_templates"]
 exclude_patterns = []
