@@ -39,12 +39,12 @@ class SparqlSelectDirective(SphinxDirective):
     }
 
     def run(self) -> list(Node):
+        query = "\n".join(self.content)
+
         if "bind" in self.options:
             bound_vars = [x.strip() for x in self.options.get("bind").split(",")]
         else:
             bound_vars = []
-
-        query = "\n".join(self.content)
 
         table = nodes.table()
         table["classes"] += ["colwidths-auto"]
@@ -66,7 +66,6 @@ class SparqlSelectDirective(SphinxDirective):
                 row_node += entry
             rows.append(row_node)
 
-
         thead = nodes.thead()
 
         hrow = nodes.row()
@@ -81,9 +80,9 @@ class SparqlSelectDirective(SphinxDirective):
         tbody = nodes.tbody()
         tbody.extend(rows)
         tgroup += tbody
-        breakpoint()
 
         return [table]
+
 
 class SparqlDomain(Domain):
     """Domain for queryinf the store"""
@@ -99,11 +98,12 @@ class SparqlDomain(Domain):
         return Store(path=self.env.config["sparql_store"])
 
     def ask(self, query: str) -> bool:
-        return  self.store.query(query)
+        return self.store.query(query)
 
     def select(self, query: str) -> QuerySolution:
         for solution in self.store.query(query):
             yield solution
+
 
 def setup(app: Sphinx) -> ExtensionMetadata:
     # TODO multiple directives, bindings as args etc? What is the interface to use the bindings in the document? Table?
