@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from os import path
 from pathlib import Path
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from pyoxigraph import Store, QuerySolution
@@ -121,7 +122,7 @@ class SparqlDomain(Domain):
 
     @property
     def store(self) -> Store:
-        return Store(path=self.env.config["sparql_store"])
+        return Store(path=self.env.sparql_store_path)
 
     def ask(self, query: str) -> bool:
         return self.store.query(query)
@@ -131,10 +132,21 @@ class SparqlDomain(Domain):
             yield solution
 
 
+def load_store(app, env, docnames):
+    env.sparql_store_path = path.join(env.app.outdir, "db")
+    store: Store = Store(path=env.sparql_store_path)
+    store.clear()
+
+    for input, mime in app.config["sparql_load"]:
+        store.load(input, mime)
+
+    store.flush()
+
+
 def setup(app: Sphinx) -> ExtensionMetadata:
-    # TODO multiple directives, bindings as args etc? What is the interface to use the bindings in the document? Table?
-    app.add_config_value("sparql_store", default=None, rebuild="html")
+    app.add_config_value("sparql_load", default=[], rebuild="html")
     app.add_domain(SparqlDomain)
+    app.connect("env-before-read-docs", load_store)
 
     return {
         "version": "0.1",
