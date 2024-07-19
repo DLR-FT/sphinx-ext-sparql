@@ -30,7 +30,7 @@ exclude_patterns = []
 html_theme = "alabaster"
 html_static_path = ["_static"]
 
-# Absolute paths in source root
+# Paths are taken as relative to the source directory
 sparql_load = [
-    (os.path.abspath("./example.ttl"), "text/turtle")
+    ("example.ttl", "text/turtle")
 ]
