@@ -5,23 +5,17 @@
   inputs.pyproject-nix.url = "github:nix-community/pyproject.nix";
   inputs.pyproject-nix.inputs.nixpkgs.follows = "nixpkgs";
 
-  outputs = { nixpkgs, flake-utils, pyproject-nix, ... }:
+  outputs = { self, nixpkgs, flake-utils, pyproject-nix, ... }:
     flake-utils.lib.eachSystem [ "aarch64-linux" "x86_64-linux" ] (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
-
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ self.overlays.default ];
+        };
         project = pyproject-nix.lib.project.loadPyproject {
           projectRoot = ./.;
         };
-
-        python = pkgs.python3.override {
-          packageOverrides = self: super: {
-            pyoxigraph = import ./pyoxigraph.nix {
-              inherit (super) buildPythonPackage;
-              inherit (pkgs) rustPlatform pkg-config fetchFromGitHub;
-            };
-          };
-        };
+        python = pkgs.python3;
       in
       rec {
         packages.default =
@@ -49,5 +43,14 @@
             ];
           };
       }
-    );
+    ) // {
+      overlays.default = final: prev: {
+        python3 = prev.python3.override {
+          packageOverrides = final: prev: {
+            pyoxigraph = prev.pythonPackages.callPackage ./pyoxigraph.nix { };
+            sphinx-sparql = prev.pythonPackages.callPackage ./default.nix { };
+          };
+        };
+      };
+    };
 }
