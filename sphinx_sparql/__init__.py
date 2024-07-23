@@ -1,10 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import os
-
 from docutils import nodes
 from docutils.parsers.rst import directives
+from os import path
 from pathlib import Path
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from pyoxigraph import Store, QuerySolution
@@ -134,13 +133,14 @@ class SparqlDomain(Domain):
 
 
 def load_store(app, env, docnames):
-    env.sparql_store_path = os.path.join(app.outdir, "db")
+    env.sparql_store_path = path.join(app.outdir, "db")
     store: Store = Store(path=env.sparql_store_path)
     store.clear()
 
     for input, mime in app.config["sparql_load"]:
-        path = os.path.join(app.srcdir, input)
-        store.load(path, mime)
+        if not path.isabs(input):
+            input = path.join(app.srcdir, input)
+        store.load(input, mime)
 
     store.flush()
 
