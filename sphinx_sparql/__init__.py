@@ -73,42 +73,48 @@ class SparqlSelectDirective(SphinxDirective):
         return [table]
 
     def table(self, bound_vars, query) -> nodes.table:
-        table = nodes.table()
-        table["classes"] += ["colwidths-auto"]
-        tgroup = nodes.tgroup(cols=len(bound_vars))
+        store = self.env.get_domain("sparql")
+        results = store.select(query)
+        render_table(bound_vars, results)
 
-        for var in bound_vars:
-            colspec = nodes.colspec()
-            tgroup += colspec
 
-        table += tgroup
+def render_table(bound_vars, results) -> nodes.table:
+    table = nodes.table()
+    table["classes"] += ["colwidths-auto"]
+    tgroup = nodes.tgroup(cols=len(bound_vars))
 
-        rows = []
-        for binding in self.env.get_domain("sparql").select(query):
-            row_node = nodes.row()
-            for var in bound_vars:
-                entry = nodes.entry()
-                named_node = binding[var]
-                entry += nodes.paragraph(text=named_node.value)
-                row_node += entry
-            rows.append(row_node)
+    for var in bound_vars:
+        colspec = nodes.colspec()
+        tgroup += colspec
 
-        thead = nodes.thead()
+    table += tgroup
 
-        hrow = nodes.row()
+    rows = []
+    for binding in results:
+        row_node = nodes.row()
         for var in bound_vars:
             entry = nodes.entry()
-            entry += nodes.paragraph(text=var)
-            hrow += entry
+            named_node = binding[var]
+            entry += nodes.paragraph(text=named_node.value)
+            row_node += entry
+        rows.append(row_node)
 
-        thead.extend([hrow])
-        tgroup += thead
+    thead = nodes.thead()
 
-        tbody = nodes.tbody()
-        tbody.extend(rows)
-        tgroup += tbody
+    hrow = nodes.row()
+    for var in bound_vars:
+        entry = nodes.entry()
+        entry += nodes.paragraph(text=var)
+        hrow += entry
 
-        return table
+    thead.extend([hrow])
+    tgroup += thead
+
+    tbody = nodes.tbody()
+    tbody.extend(rows)
+    tgroup += tbody
+
+    return table
 
 
 class SparqlDomain(Domain):
