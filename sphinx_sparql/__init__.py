@@ -80,7 +80,8 @@ class SparqlSelectDirective(SphinxDirective):
     def table(self, bound_vars, query) -> nodes.table:
         store = self.env.get_domain("sparql")
         results = store.select(query)
-        render_table(bound_vars, results)
+
+        return render_table(bound_vars, results)
 
 
 def render_table(bound_vars, results) -> nodes.table:
