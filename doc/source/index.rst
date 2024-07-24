@@ -18,13 +18,12 @@ Directives
     :file: list_sub_obj.rq
     :bind: sub, obj
 
-    select ?sub ?p ?obj { ?sub ?p ?obj }
+    select ?Subject ?p ?Object { ?sub ?p ?obj }
 
 This renders to
 
 .. sparql:select::
   :file: list_sub_obj.rq
-  :bind: sub, obj
 
 The following directive is equivalent but gets the query from a file in `srcdir`.
 
@@ -32,7 +31,7 @@ The following directive is equivalent but gets the query from a file in `srcdir`
 
   .. sparql:select::
       :file: list_sub_obj.rq
-      :bind: sub, obj
+      :bind: Subject, Object
 
 Rules
 -----

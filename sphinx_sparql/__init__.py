@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -7,8 +7,11 @@ from os import path
 from pathlib import Path
 from sphinx.errors import SphinxError
 from sphinx.util.docutils import SphinxDirective, SphinxRole
-from pyoxigraph import Store, QuerySolution
+from pyoxigraph import Store, QuerySolutions
 from sphinx.domains import Domain
+from sphinx.util import logging
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from docutils.nodes import Node, system_message
@@ -34,8 +37,12 @@ class SparqlAskRole(SphinxRole):
             # Assume this is a plain SPARQL query
             query = self.text
 
-        answer = self.ask(query)
-        return [answer], []
+        try:
+            answer = self.ask(query)
+            return [answer], []
+        except SparqlExtError as e:
+            return [], [self.error(e, lineno=self.lineno)]
+
 
     def ask(self, query) -> Node:
         domain = self.env.get_domain("sparql")
@@ -71,20 +78,28 @@ class SparqlSelectDirective(SphinxDirective):
         if "bind" in self.options:
             bound_vars = [x.strip() for x in self.options.get("bind").split(",")]
         else:
-            bound_vars = []
+            bound_vars = None
 
-        table = self.table(bound_vars, query)
+        try:
+            table = self.table(query, bound_vars)
+            return [table]
+        except SparqlExtError as e:
+            logger.error(f"[sparql_sphinx] {e}")
+            return []
 
-        return [table]
 
-    def table(self, bound_vars, query) -> nodes.table:
+    def table(self, query, bound_vars: Union[None, list(str)]=None) -> nodes.table:
         store = self.env.get_domain("sparql")
         results = store.select(query)
 
-        return render_table(bound_vars, results)
+        return render_table(self, results, bound_vars)
 
 
-def render_table(bound_vars, results) -> nodes.table:
+
+def render_table(self, results, bound_vars=None) -> nodes.table:
+    if bound_vars is None:
+        bound_vars = [var.value for var in results.variables]
+
     table = nodes.table()
     table["classes"] += ["colwidths-auto"]
     tgroup = nodes.tgroup(cols=len(bound_vars))
@@ -100,6 +115,9 @@ def render_table(bound_vars, results) -> nodes.table:
         row_node = nodes.row()
         for var in bound_vars:
             entry = nodes.entry()
+            if var not in [var.value for var in results.variables]:
+                logger.error(f"[sphinx_sparql]: Binding \"{var}\" not provided in query")
+                continue
             named_node = binding[var]
             entry += nodes.paragraph(text=named_node.value)
             row_node += entry
@@ -137,11 +155,18 @@ class SparqlDomain(Domain):
         return Store.read_only(self.env.sparql_store_path)
 
     def ask(self, query: str) -> bool:
-        return self.store.query(query)
+        try:
+            return self.store.query(query)
+        except SyntaxError|IOError as e:
+            raise SparqlExtError(f"{e}")
 
-    def select(self, query: str) -> QuerySolution:
-        for solution in self.store.query(query):
-            yield solution
+    def select(self, query: str) -> QuerySolutions:
+        try:
+            results = self.store.query(query)
+        except SyntaxError|IOError as e:
+            raise SparqlExtError(f"{e}")
+
+        return results
 
 
 def load_store(app, env, docnames):
@@ -155,9 +180,9 @@ def load_store(app, env, docnames):
         try:
             store.bulk_load(input, mime)
         except ValueError:
-            raise SparqlExtError(f"Error (sparql extension): Unsupported MIME type {mime} for input file {input}")
+            raise SparqlExtError(f"Unsupported MIME type {mime} for input file {input}")
         except SyntaxError as e:
-            raise SparqlExtError(f"Error (sparql extension): Invalid syntax input file {input}: {e.text}")
+            raise SparqlExtError(f"Invalid syntax input file {input}: {e.text}")
 
     store.flush()
 
