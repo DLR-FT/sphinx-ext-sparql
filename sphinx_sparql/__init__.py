@@ -5,6 +5,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from os import path
 from pathlib import Path
+from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from pyoxigraph import Store, QuerySolutions
@@ -41,12 +42,15 @@ class SparqlAskRole(SphinxRole):
             answer = self.ask(query)
             return [answer], []
         except SparqlExtError as e:
-            return [], [self.error(e, lineno=self.lineno)]
+            return [], [e]
 
 
     def ask(self, query) -> Node:
         domain = self.env.get_domain("sparql")
-        result = domain.ask(query)
+        if isinstance(domain, SparqlDomain):
+            result = domain.ask(query)
+        else:
+            logger.error("[sphinx_sparql]: SPARQL domain not initialized")
 
         if bool(result):
             text = "✓"
@@ -66,7 +70,7 @@ class SparqlSelectDirective(SphinxDirective):
         "file": directives.unchanged,
     }
 
-    def run(self) -> list(Node):
+    def run(self) -> list[Node]:
         if "file" in self.options:
             rel_filename, filename = self.env.relfn2path(self.options["file"])
             self.env.note_dependency(rel_filename)
@@ -88,9 +92,12 @@ class SparqlSelectDirective(SphinxDirective):
             return []
 
 
-    def table(self, query, bound_vars: Union[None, list(str)]=None) -> nodes.table:
-        store = self.env.get_domain("sparql")
-        results = store.select(query)
+    def table(self, query, bound_vars: Union[None, list[str]]=None) -> nodes.table:
+        domain = self.env.get_domain("sparql")
+        if isinstance(domain, SparqlDomain):
+            results = domain.select(query)
+        else:
+            raise SparqlExtError("SPARQL domain not initialized")
 
         return render_table(self, results, bound_vars)
 
@@ -152,26 +159,26 @@ class SparqlDomain(Domain):
 
     @property
     def store(self) -> Store:
-        return Store.read_only(self.env.sparql_store_path)
+        return Store.read_only(path.join(self.env.app.outdir, "db"))
 
     def ask(self, query: str) -> bool:
         try:
             return self.store.query(query)
-        except SyntaxError|IOError as e:
+        except (SyntaxError, IOError) as e:
             raise SparqlExtError(f"{e}")
 
     def select(self, query: str) -> QuerySolutions:
         try:
             results = self.store.query(query)
-        except SyntaxError|IOError as e:
+        except (SyntaxError, IOError) as e:
             raise SparqlExtError(f"{e}")
 
         return results
 
 
-def load_store(app, env, docnames):
-    env.sparql_store_path = path.join(app.outdir, "db")
-    store: Store = Store(path=env.sparql_store_path)
+def load_store(app: Sphinx, env: BuildEnvironment, docnames: list[str]):
+    sparql_store_path = path.join(app.outdir, "db")
+    store: Store = Store(path=sparql_store_path)
     store.clear()
 
     for input, mime in app.config["sparql_load"]:

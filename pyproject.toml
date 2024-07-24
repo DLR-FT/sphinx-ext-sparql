@@ -12,6 +12,7 @@ dependencies = [
 ]
 optional-dependencies.test = [
     "black",
+    "mypy",
     "pytest",
     "pytest-cov[all]",
     "pylint",
@@ -30,7 +31,6 @@ classifiers = [
 ]
 keywords = ["sparql", "rdf", "sphinx", "documentation"]
 
-
 [project.urls]
 Homepage = "https://dlr.de/ft/ssy"
 #Documentation = "https://readthedocs.org"
@@ -38,5 +38,9 @@ Homepage = "https://dlr.de/ft/ssy"
 #"Bug Tracker" = "https://github.com/me/spam/issues"
 #Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
-[tool.pylsp.plugins.ruff]
-enabled = true
+[tool.pylsp.plugins]
+black.enabled = true
+mypy.enabled = true
+
+[tool.mypy]
+disable_error_code = "import-untyped"
