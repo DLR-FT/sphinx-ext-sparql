@@ -5,6 +5,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from os import path
 from pathlib import Path
+from sphinx.errors import SphinxError
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 from pyoxigraph import Store, QuerySolution
 from sphinx.domains import Domain
@@ -14,6 +15,10 @@ if TYPE_CHECKING:
 
     from sphinx.application import Sphinx
     from sphinx.util.typing import ExtensionMetadata
+
+
+class SparqlExtError(SphinxError):
+    category = "Sparql extension error"
 
 
 class SparqlAskRole(SphinxRole):
@@ -146,7 +151,12 @@ def load_store(app, env, docnames):
     for input, mime in app.config["sparql_load"]:
         if not path.isabs(input):
             input = path.join(app.srcdir, input)
-        store.load(input, mime)
+        try:
+            store.bulk_load(input, mime)
+        except ValueError:
+            raise SparqlExtError(f"Error (sparql extension): Unsupported MIME type {mime} for input file {input}")
+        except SyntaxError as e:
+            raise SparqlExtError(f"Error (sparql extension): Invalid syntax input file {input}: {e.text}")
 
     store.flush()
 
