@@ -126,7 +126,8 @@ def render_table(self, results, bound_vars=None) -> nodes.table:
                 logger.error(f"[sphinx_sparql]: Binding \"{var}\" not provided in query")
                 continue
             named_node = binding[var]
-            entry += nodes.paragraph(text=named_node.value)
+            value = getattr(named_node, "value", None)
+            entry += nodes.paragraph(text=value)
             row_node += entry
         rows.append(row_node)
 
