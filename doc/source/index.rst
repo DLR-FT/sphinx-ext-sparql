@@ -33,6 +33,23 @@ The following directive is equivalent but gets the query from a file in `srcdir`
       :file: list_sub_obj.rq
       :bind: Subject, Object
 
+The same data can be displayed as a cross product table (also known as pivot table).
+
+.. code-block:: rst
+
+  .. sparql::select_cross
+      :file: list_sub_obj.rq
+      :dimension-x: Object
+      :dimension-y: Subject
+
+This renders to this table:
+
+.. sparql:select-cross::
+  :file: list_sub_obj.rq
+  :dimension-x: Object
+  :dimension-y: Subject
+
+
 Rules
 -----
 
