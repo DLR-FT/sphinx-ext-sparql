@@ -99,11 +99,10 @@ class SparqlSelectDirective(SphinxDirective):
         else:
             raise SparqlExtError("SPARQL domain not initialized")
 
-        return render_table(self, results, bound_vars)
+        return render_table(results, bound_vars)
 
 
-
-def render_table(self, results, bound_vars=None) -> nodes.table:
+def render_table(results, bound_vars=None) -> nodes.table:
     if bound_vars is None:
         bound_vars = [var.value for var in results.variables]
 
