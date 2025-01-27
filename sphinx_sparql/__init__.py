@@ -162,10 +162,10 @@ def render_crosstab(results: QuerySolutions, dimension_x, dimension_y) -> nodes.
         matrix[y][x] = "✓"
 
     def dimension_x_labels(matrix):
-        return set([item for row in matrix for item in list(matrix[row])])
+        return sorted(set([item for row in matrix for item in list(matrix[row])]))
 
     def dimension_y_labels(matrix):
-        return set([row for row in matrix])
+        return sorted(set([row for row in matrix]))
 
     dimension_x_labels = dimension_x_labels(matrix)
     dimension_y_labels = dimension_y_labels(matrix)
