@@ -1,6 +1,7 @@
 {
   description = "Sphinx Extension for performing SPARQL queries";
 
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.pyproject-nix.url = "github:nix-community/pyproject.nix";
   inputs.pyproject-nix.inputs.nixpkgs.follows = "nixpkgs";
@@ -47,7 +48,6 @@
       overlays.default = final: prev: {
         python3 = prev.python3.override {
           packageOverrides = final: prev: {
-            pyoxigraph = prev.pythonPackages.callPackage ./pyoxigraph.nix { };
             sphinx-sparql = prev.pythonPackages.callPackage ./default.nix { };
           };
         };
