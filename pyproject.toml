@@ -8,7 +8,7 @@ description = "Sphinx Extension for performing SPARQL queries"
 version = "0.0.1"
 dependencies = [
     "sphinx",
-    "pyoxigraph",
+    "pyoxigraph>=0.4.8",
 ]
 optional-dependencies.test = [
     "black",
