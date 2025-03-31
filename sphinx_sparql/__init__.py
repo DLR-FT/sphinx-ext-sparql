@@ -310,7 +310,8 @@ def load_store(app: Sphinx, env: BuildEnvironment, docnames: list[str]):
         if not path.isabs(input):
             input = path.join(app.srcdir, input)
         try:
-            store.bulk_load(input, mime)
+            with open(input, "r") as f:
+                store.bulk_load(f, mime)
         except ValueError:
             raise SparqlExtError(f"Unsupported MIME type {mime} for input file {input}")
         except SyntaxError as e:
