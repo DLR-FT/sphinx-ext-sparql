@@ -34,8 +34,8 @@ keywords = ["sparql", "rdf", "sphinx", "documentation"]
 [project.urls]
 Homepage = "https://dlr.de/ft/ssy"
 #Documentation = "https://readthedocs.org"
-#Repository = "https://github.com/me/spam.git"
-#"Bug Tracker" = "https://github.com/me/spam/issues"
+Repository = "https://github.com/DLR-FT/sphinx-ext-sparql"
+"Bug Tracker" = "https://github.com/DLR-FT/sphinx-ext-sparql/issues"
 #Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
 [tool.pylsp.plugins]
