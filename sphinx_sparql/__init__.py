@@ -159,8 +159,13 @@ def render_crosstab(results: QuerySolutions, dimension_x, dimension_y) -> nodes.
     for res in results:
         if res[dimension_x]:
             x = res[dimension_x].value
+        else:
+            x = None
+
         if res[dimension_y]:
             y = res[dimension_y].value
+        else:
+            y = None
         if x and y:
             matrix[y][x] = "✓"
 
