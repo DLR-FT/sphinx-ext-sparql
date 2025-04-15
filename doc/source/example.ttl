@@ -1,4 +1,8 @@
 @prefix dc:   <http://purl.org/dc/elements/1.1/> .
 @prefix :     <http://example.org/books/> .
-:book0  dc:title  "SPARQL Tutorial" .
-:book1  dc:title  "SPARQL Extended Guide" .
+:book0 a :Book ;
+  dc:title  "SPARQL Tutorial" .
+:book1 a :Book ;
+  dc:title  "SPARQL Extended Guide" .
+:book2 a :Book ;
+  :notTitle "Not a title" .

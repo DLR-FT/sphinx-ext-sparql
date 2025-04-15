@@ -1,0 +1,9 @@
+PREFIX dc:   <http://purl.org/dc/elements/1.1/>
+PREFIX :     <http://example.org/books/>
+
+select ?Subject ?Object {
+  ?Subject a :Book ;
+  OPTIONAL {
+    ?Subject dc:title ?Object .
+  }
+}

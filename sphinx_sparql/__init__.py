@@ -157,9 +157,12 @@ def render_crosstab(results: QuerySolutions, dimension_x, dimension_y) -> nodes.
         return table
 
     for res in results:
-        x = res[dimension_x].value
-        y = res[dimension_y].value
-        matrix[y][x] = "✓"
+        if res[dimension_x]:
+            x = res[dimension_x].value
+        if res[dimension_y]:
+            y = res[dimension_y].value
+        if x and y:
+            matrix[y][x] = "✓"
 
     def dimension_x_labels(matrix):
         return sorted(set([item for row in matrix for item in list(matrix[row])]))
